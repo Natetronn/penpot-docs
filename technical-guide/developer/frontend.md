@@ -206,9 +206,7 @@ debug.debug_none()
 ```
 
 ## Translations (I18N)
-## Translations (I18N)
 
-### How it works
 ### How it works
 
 All the translation strings of this application are stored in
@@ -252,7 +250,6 @@ frontend/src/app/util/i18n.cljs (supported-locales)
 frontend/gulpfile.js (const langs)
 ```
 
-### How to use it
 ### How to use it
 
 You need to use the `app.util.i18n/tr` function for lookup translation
@@ -380,6 +377,7 @@ npx playwright test --ui
 ```
 > ❗**WARNING** It is important to be on the right folder `frontend` of the project or we may have silent errors trying to run the tests.
 
+
 ### Testing best practices
 Our best practices are based on [Testing library documentation](https://testing-library.com/docs/).
 
@@ -412,3 +410,93 @@ Depending on the content of the page and the element to be selected, we will cho
     1. [page.getByTestId](https://playwright.dev/docs/locators#locate-by-test-id): Use this method if you can not locate by role or text.
 
 For our integration tests we use Playwright, you can find more info about this library and the different locators [here](https://playwright.dev/docs/intro).
+
+#### Assertions
+Assertions follow this structure:
+
+```js
+expect(query).toBeTruthy();
+```
+
+**Keep Assertions Clear and Concise:** Each assertion should verify a single expected behavior or outcome. Avoid combining multiple assertions into a single line to maintain clarity and readability.
+
+**Use Descriptive Assertions:** Use descriptive assertion messages that clearly communicate the purpose of the assertion.
+
+**Preferably choose assertions from the user's point of view:**.
+
+- the title exists os is visible
+```js
+  await expect(page.getByRole("heading", { name: "Log into my account" } )).toBeVisible();
+```
+
+- the url contains a given string
+```js
+await expect(page).toHaveURL(/dashboard/);
+```
+
+Avoid asking for something user can not see
+```js
+const locator = page.locator('.my-element');
+await expect(locator).toBeHidden();
+```
+
+**Avoid Hard-Coding Values:** Avoid hard-coding expected values in assertions whenever possible.
+
+**Check Error Handling**: Verify that the application handles errors gracefully by asserting the presence of error messages.
+
+```js
+await expect(page.getByRole("alert", { name: "Email or password is incorrect" })).toBeVisible();
+```
+
+**Preferably positive assertions:** Avoid using `expect(query).not.toBeTruthy();`
+
+#### Events
+
+We are simulating user actions and events they trigger, so in other to mirror real-world user interactions. Yo achieve this:
+
+**Use Realistic User Scenarios:** Design test cases that mimic real user scenarios and interactions with the application.
+
+**Simulate User Inputs**: Such as mouse clicks, keyboard inputs, form submissions, or touch gestures, using the testing framework's API. Mimic user interactions as closely as possible to accurately simulate user behavior.
+
+**Modularize User Actions:** Encapsulate user actions into reusable functions or modules to promote code reuse and maintainability.
+
+**Test Edge Cases and Error Conditions**: By deliberately triggering unexpected user actions or inputs. Verify that the application handles these situations gracefully and provides appropriate feedback or error messages to the user.
+
+#### Mocking
+
+API calls
+
+In order to mock and API call we need the url and the body of the response.
+The body should be
+```js
+export const interceptRPC = async (page, path, jsonFilename, options = {}) => {
+  const defaults = {
+    status: 200
+  };
+  const interceptConfig = {...defaults, ...options};
+
+  await page.route(`**/api/rpc/command/${path}`, (route) => {
+    route.fulfill({
+      interceptConfig,
+      contentType: "application/transit+json",
+      path: `playwright/fixtures/${jsonFilename}`,
+    });
+  });
+};
+```
+Websockets
+
+#### Naming tests
+**User-Centric Approach:** Tests should be named from the perspective of user actions.
+Example: Instead of "testLoginFunctionality", use "shouldLoginSuccessfully" or "verifyLoginFailureMessage".
+
+**Descriptive Names:** Test names should be descriptive, clearly indicating the action being tested.
+Example: "shouldDisplayErrorMessageOnInvalidCredentials" communicates the expected behavior more effectively than "test1".
+
+**Clarity and Conciseness:** Keep test names clear and concise, avoiding unnecessary verbosity.
+Example: "verifyErrorMessageShownOnInvalidCredentials" is clearer than "ensureThatAnErrorMessageIsDisplayedWhenIncorrectCredentialsAreEntered".
+
+**Use Action Verbs:** Start test names with action verbs to denote the action being tested.
+Example: "shouldNavigateToLoginPage" or "verifySuccessfulLogout".
+
+#### Other considerations
